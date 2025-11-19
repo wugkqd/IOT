@@ -130,12 +130,20 @@ def Run():
 	
 	tilt = tilt + 60
 	print(f"Filtered Pitch Tilt: {tilt:.2f} degrees")
+	
+	current_time = time.time()
 
 	if (tilt > A):
-		GPIO.output(pin_LED_RED, GPIO.HIGH)
-		GPIO.output(pin_LED_YELLOW, GPIO.LOW)
-		GPIO.output(pin_LED_GREEN, GPIO.LOW)
-		GPIO.output(buzzer_pin, GPIO.HIGH)
+		if start_time_high_tilt is None:
+			start_time_high_tilt = current_time
+		if (current_time - start_time_high_tilt) >= 5.0
+			GPIO.output(pin_LED_RED, GPIO.HIGH)
+			GPIO.output(pin_LED_YELLOW, GPIO.LOW)
+			GPIO.output(pin_LED_GREEN, GPIO.LOW)
+			GPIO.output(buzzer_pin, GPIO.HIGH)
+		else:
+			start_time_high_tilt = 0
+			continue
 	elif (tilt > B):
 		GPIO.output(pin_LED_RED, GPIO.LOW)
 		GPIO.output(pin_LED_YELLOW, GPIO.HIGH)
