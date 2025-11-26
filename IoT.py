@@ -85,17 +85,29 @@ def read_gyro():
 # 캘리브레이션 함수: 시작 시 100개 샘플을 읽어 평균을 구함
 def calibrate_sensor(samples=100):
     global offset_roll, offset_pitch, roll_angle, pitch_angle, last_time
+    
     print("캘리브레이션 중... 의자를 평평하게 유지하세요.")
     
+    # [중요 수정] 1. 시작하자마자 현재 가속도 값으로 각도를 '강제 초기화' 합니다.
+    # 이렇게 해야 0도에서 서서히 올라가는 현상(Lag)을 막을 수 있습니다.
+    accel_data = read_accel()
+    ax, ay, az = accel_data
+    
+    # 가속도 기반 각도 계산 (라디안 -> 도)
+    roll_angle = math.atan2(ay, math.sqrt(ax**2 + az**2)) * (180.0 / math.pi)
+    pitch_angle = math.atan2(-ax, math.sqrt(ay**2 + az**2)) * (180.0 / math.pi)
+    
+    print(f"초기 각도 강제 설정 완료: Pitch={pitch_angle:.2f}, Roll={roll_angle:.2f}")
+
+    # 2. 값 안정화를 위해 루프를 돌며 평균을 구합니다.
     sum_roll = 0
     sum_pitch = 0
     
-    # 초기 각도 수렴을 위해 잠시 대기 및 루프
     for i in range(samples):
         accel_data = read_accel()
         gyro_data = read_gyro()
         
-        # 상보 필터 실행하여 값 안정화
+        # 상보 필터 실행
         r, p = cal_complementary(accel_data, gyro_data)
         
         sum_roll += r
@@ -105,8 +117,7 @@ def calibrate_sensor(samples=100):
     offset_roll = sum_roll / samples
     offset_pitch = sum_pitch / samples
     
-    print(f"캘리브레이션 완료! Offset Roll: {offset_roll:.2f}, Offset Pitch: {offset_pitch:.2f}")
-
+    print(f"캘리브레이션 최종 완료! Offset -> Roll: {offset_roll:.2f}, Pitch: {offset_pitch:.2f}")
 def cal_complementary(accel_data, gyro_data):
     global roll_angle, pitch_angle, last_time
 
