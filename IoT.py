@@ -236,5 +236,6 @@ except KeyboardInterrupt:
     print("\n\n프로그램 종료. GPIO 정리 중...")
     
 finally:
+    buzzer_pwm.stop()
     GPIO.cleanup()
     print("GPIO 정리 완료.")
