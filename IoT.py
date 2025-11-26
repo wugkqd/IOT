@@ -3,13 +3,15 @@ import time
 import RPi.GPIO as GPIO
 import threading
 import math
-from pygame import mixer
+#from pygame import mixer
 import time
 
-mixer.init()
-mixer.music.load("/home/pi/Downloads/sample-3s.mp3")
+#mixer.init()
+#mixer.music.load("/home/pi/Downloads/sample-3s.mp3")
 
 running = True
+
+start_time_high_tilt = None
 
 def button_callback(channel):
 	global running
@@ -58,6 +60,8 @@ def infinite_task():
 			GPIO.output(pin_LED_RED, GPIO.LOW)
 			GPIO.output(pin_LED_YELLOW, GPIO.LOW)
 			GPIO.output(pin_LED_GREEN, GPIO.LOW)
+            global start_time_high_tilt
+            start_time_high_tilt = None
 		time.sleep(0.01)
 
 
@@ -119,6 +123,7 @@ def Run():
 	gyro_data = read_gyro()
 	accel_x, accel_y, accel_z = accel_data
 	gyro_x, gyro_y, gyro_z = gyro_data
+    global start_time_high_tilt
 	
 	print(f"Accel: X={accel_x}, Y={accel_y}, Z={accel_z}")
 	print(f"Gyro Raw: X={gyro_x}, Y={gyro_y}, Z={gyro_z}")
@@ -133,28 +138,34 @@ def Run():
 	
 	current_time = time.time()
 
-	if (tilt > A):
-		if start_time_high_tilt is None:
-			start_time_high_tilt = current_time
-		if (current_time - start_time_high_tilt) >= 5.0
-			GPIO.output(pin_LED_RED, GPIO.HIGH)
-			GPIO.output(pin_LED_YELLOW, GPIO.LOW)
-			GPIO.output(pin_LED_GREEN, GPIO.LOW)
-			GPIO.output(buzzer_pin, GPIO.HIGH)
-		else:
-			start_time_high_tilt = 0
-			continue
-	elif (tilt > B):
-		GPIO.output(pin_LED_RED, GPIO.LOW)
-		GPIO.output(pin_LED_YELLOW, GPIO.HIGH)
-		GPIO.output(pin_LED_GREEN, GPIO.LOW)
-		GPIO.output(buzzer_pin, GPIO.LOW)
-	else:
-		GPIO.output(pin_LED_RED, GPIO.LOW)
-		GPIO.output(pin_LED_YELLOW, GPIO.LOW)
-		GPIO.output(pin_LED_GREEN, GPIO.HIGH)
-		GPIO.output(buzzer_pin, GPIO.LOW)
+    if (tilt > A):
+        if start_time_high_tilt is None:
+            start_time_high_tilt = current_time
+        
+        if (current_time - start_time_high_tilt) >= 5.0:
+            GPIO.output(pin_LED_RED, GPIO.HIGH)
+            GPIO.output(pin_LED_YELLOW, GPIO.LOW)
+            GPIO.output(pin_LED_GREEN, GPIO.LOW)
+            GPIO.output(buzzer_pin, GPIO.HIGH)
+        else:
+            GPIO.output(pin_LED_RED, GPIO.LOW)
+            GPIO.output(pin_LED_YELLOW, GPIO.HIGH)
+            GPIO.output(pin_LED_GREEN, GPIO.LOW)
+            GPIO.output(buzzer_pin, GPIO.LOW)
+            
+    else:
+        start_time_high_tilt = None
 
+        if (tilt > B):
+            GPIO.output(pin_LED_RED, GPIO.LOW)
+            GPIO.output(pin_LED_YELLOW, GPIO.HIGH)
+            GPIO.output(pin_LED_GREEN, GPIO.LOW)
+            GPIO.output(buzzer_pin, GPIO.LOW)
+        else:
+            GPIO.output(pin_LED_RED, GPIO.LOW)
+            GPIO.output(pin_LED_YELLOW, GPIO.LOW)
+            GPIO.output(pin_LED_GREEN, GPIO.HIGH)
+            GPIO.output(buzzer_pin, GPIO.LOW)
 threading.Thread(target=infinite_task, daemon=True).start()
 
 try:
