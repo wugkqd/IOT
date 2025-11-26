@@ -27,7 +27,7 @@ pin_button = 27
 pin_LED_RED = 16
 pin_LED_YELLOW = 20
 pin_LED_GREEN = 19
-buzzer_pin = 1
+buzzer_pin = 13
 
 # 전역 변수
 running = True
@@ -49,6 +49,8 @@ GPIO.setup(pin_LED_RED, GPIO.OUT)
 GPIO.setup(pin_LED_YELLOW, GPIO.OUT)
 GPIO.setup(pin_LED_GREEN, GPIO.OUT)
 GPIO.setup(buzzer_pin, GPIO.OUT)
+buzzer_pwm = GPIO.PWM(buzzer_pin, 440) 
+buzzer_pwm.start(0)
 
 def button_callback(channel):
     global running, start_time_high_tilt
@@ -176,13 +178,14 @@ def Run():
             GPIO.output(pin_LED_RED, GPIO.HIGH)
             GPIO.output(pin_LED_YELLOW, GPIO.LOW)
             GPIO.output(pin_LED_GREEN, GPIO.LOW)
-            GPIO.output(buzzer_pin, GPIO.HIGH)
+            buzzer_pwm.ChangeFrequency(392)  # 392Hz (4옥타브 '솔') - 부드러운 소리
+            buzzer_pwm.ChangeDutyCycle(10)   # 볼륨 10% (소리가 너무 크면 이 숫자를 줄이세요)
         else:
             # 아직 5초 안됨 -> 노란불 (주의 단계)
             GPIO.output(pin_LED_RED, GPIO.LOW)
             GPIO.output(pin_LED_YELLOW, GPIO.HIGH)
             GPIO.output(pin_LED_GREEN, GPIO.LOW)
-            GPIO.output(buzzer_pin, GPIO.LOW)
+            buzzer_pwm.ChangeDutyCycle(0)
             
 # 조건 B: 경고 범위 (Warning) 초과 (위험 범위보다는 작음)
     elif abs_pitch > PITCH_LIMIT_WARNING or abs_roll > ROLL_LIMIT_WARNING:
@@ -191,7 +194,7 @@ def Run():
         GPIO.output(pin_LED_RED, GPIO.LOW)
         GPIO.output(pin_LED_YELLOW, GPIO.HIGH)
         GPIO.output(pin_LED_GREEN, GPIO.LOW)
-        GPIO.output(buzzer_pin, GPIO.LOW)
+        buzzer_pwm.ChangeDutyCycle(0)
         
     # 정상 범위
     else:
@@ -200,7 +203,7 @@ def Run():
         GPIO.output(pin_LED_RED, GPIO.LOW)
         GPIO.output(pin_LED_YELLOW, GPIO.LOW)
         GPIO.output(pin_LED_GREEN, GPIO.HIGH)
-        GPIO.output(buzzer_pin, GPIO.LOW)
+        buzzer_pwm.ChangeDutyCycle(0)
 
 def infinite_task():
     global is_calibrated
@@ -219,7 +222,7 @@ def infinite_task():
             GPIO.output(pin_LED_RED, GPIO.LOW)
             GPIO.output(pin_LED_YELLOW, GPIO.LOW)
             GPIO.output(pin_LED_GREEN, GPIO.LOW)
-            GPIO.output(buzzer_pin, GPIO.LOW)
+            buzzer_pwm.ChangeDutyCycle(0)
             start_time_high_tilt = None
         time.sleep(0.01)
 
