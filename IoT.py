@@ -17,10 +17,10 @@ GYRO_SCALE = 131.0
 ALPHA = 0.98
 
 # 임계값 설정
-PITCH_LIMIT_WARNING = 10  # 앞뒤 기울기 경고 기준 (B)
-PITCH_LIMIT_DANGER = 15   # 앞뒤 기울기 위험 기준 (A)
-ROLL_LIMIT_WARNING = 10   # 좌우 기울기 경고 기준 (새로 추가됨)
-ROLL_LIMIT_DANGER = 15    # 좌우 기울기 위험 기준 (새로 추가됨)
+PITCH_LIMIT_WARNING = 2.5  # 앞뒤 기울기 경고 기준 (B)
+PITCH_LIMIT_DANGER = 3.6   # 앞뒤 기울기 위험 기준 (A)
+ROLL_LIMIT_WARNING = 8   # 좌우 기울기 경고 기준 (새로 추가됨)
+ROLL_LIMIT_DANGER = 13    # 좌우 기울기 위험 기준 (새로 추가됨)
 
 # 핀 설정
 pin_button = 27
@@ -49,7 +49,7 @@ GPIO.setup(pin_LED_RED, GPIO.OUT)
 GPIO.setup(pin_LED_YELLOW, GPIO.OUT)
 GPIO.setup(pin_LED_GREEN, GPIO.OUT)
 GPIO.setup(buzzer_pin, GPIO.OUT)
-buzzer_pwm = GPIO.PWM(buzzer_pin, 440) 
+buzzer_pwm = GPIO.PWM(buzzer_pin, 261) 
 buzzer_pwm.start(0)
 
 def button_callback(channel):
