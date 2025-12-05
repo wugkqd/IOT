@@ -19,8 +19,8 @@ ALPHA = 0.98
 # 임계값 설정
 PITCH_LIMIT_WARNING = 2.5  # 앞뒤 기울기 경고 기준 (B)
 PITCH_LIMIT_DANGER = 3.6   # 앞뒤 기울기 위험 기준 (A)
-ROLL_LIMIT_WARNING = 8   # 좌우 기울기 경고 기준
-ROLL_LIMIT_DANGER = 13    # 좌우 기울기 위험 기준
+ROLL_LIMIT_WARNING = 8   # 좌우 기울기 경고 기준 (새로 추가됨)
+ROLL_LIMIT_DANGER = 13    # 좌우 기울기 위험 기준 (새로 추가됨)
 
 # 핀 설정
 pin_button = 27
@@ -72,23 +72,26 @@ def read_word_2c(reg):
     val = (high << 8) + low
     return val if val < 0x8000 else val - 65536
 
-def read_accel(): #가속도 측정
+def read_accel():
     accel_x = read_word_2c(accel_x_out)
     accel_y = read_word_2c(accel_y_out)
     accel_z = read_word_2c(accel_z_out)
     return accel_x, accel_y, accel_z
 
-def read_gyro(): #자이로 측정
+def read_gyro():
     gyro_x = read_word_2c(gyro_x_out)
     gyro_y = read_word_2c(gyro_y_out)
     gyro_z = read_word_2c(gyro_z_out)
     return gyro_x, gyro_y, gyro_z
 
-# 캘리브레이션 함수: 시작 시 100개 샘플을 읽어 평균을 구함 (초기 의자 각도 0도로 초기화)
+# 캘리브레이션 함수: 시작 시 100개 샘플을 읽어 평균을 구함
 def calibrate_sensor(samples=100):
     global offset_roll, offset_pitch, roll_angle, pitch_angle, last_time
     
+    print("캘리브레이션 중... 의자를 평평하게 유지하세요.")
     
+    # [중요 수정] 1. 시작하자마자 현재 가속도 값으로 각도를 '강제 초기화' 합니다.
+    # 이렇게 해야 0도에서 서서히 올라가는 현상(Lag)을 막을 수 있습니다.
     accel_data = read_accel()
     ax, ay, az = accel_data
     
@@ -96,6 +99,9 @@ def calibrate_sensor(samples=100):
     roll_angle = math.atan2(ay, math.sqrt(ax**2 + az**2)) * (180.0 / math.pi)
     pitch_angle = math.atan2(-ax, math.sqrt(ay**2 + az**2)) * (180.0 / math.pi)
     
+    print(f"초기 각도 강제 설정 완료: Pitch={pitch_angle:.2f}, Roll={roll_angle:.2f}")
+
+    # 2. 값 안정화를 위해 루프를 돌며 평균을 구합니다.
     sum_roll = 0
     sum_pitch = 0
     
@@ -113,6 +119,7 @@ def calibrate_sensor(samples=100):
     offset_roll = sum_roll / samples
     offset_pitch = sum_pitch / samples
     
+    print(f"캘리브레이션 최종 완료! Offset -> Roll: {offset_roll:.2f}, Pitch: {offset_pitch:.2f}")
 def cal_complementary(accel_data, gyro_data):
     global roll_angle, pitch_angle, last_time
 
@@ -156,6 +163,8 @@ def Run():
     abs_roll = abs(current_roll)
     abs_pitch = abs(current_pitch)
 
+    print(f"Pitch(앞뒤): {current_pitch:.2f}, Roll(좌우): {current_roll:.2f}")
+
     current_time = time.time()
 
     # 4. 판별 로직: 앞뒤(Pitch) 또는 좌우(Roll) 중 하나라도 위험 범위를 넘으면 경고
@@ -169,8 +178,8 @@ def Run():
             GPIO.output(pin_LED_RED, GPIO.HIGH)
             GPIO.output(pin_LED_YELLOW, GPIO.LOW)
             GPIO.output(pin_LED_GREEN, GPIO.LOW)
-            buzzer_pwm.ChangeFrequency(392)
-            buzzer_pwm.ChangeDutyCycle(10) 
+            buzzer_pwm.ChangeFrequency(392)  # 392Hz (4옥타브 '솔') - 부드러운 소리
+            buzzer_pwm.ChangeDutyCycle(10)   # 볼륨 10% (소리가 너무 크면 이 숫자를 줄이세요)
         else:
             # 아직 5초 안됨 -> 노란불 (주의 단계)
             GPIO.output(pin_LED_RED, GPIO.LOW)
@@ -224,7 +233,9 @@ try:
         time.sleep(0.1)
 
 except KeyboardInterrupt:
+    print("\n\n프로그램 종료. GPIO 정리 중...")
     
 finally:
     buzzer_pwm.stop()
     GPIO.cleanup()
+    print("GPIO 정리 완료.")
